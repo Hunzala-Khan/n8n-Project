@@ -1,0 +1,21 @@
+{
+  "name": "shopkeeping-voice-chat",
+  "version": "1.0.0",
+  "description": "Voice chat application for ShopKeeping with n8n integration",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "vue": "^3.3.4",
+    "socket.io-client": "^4.7.2",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.3.4",
+    "vite": "^4.4.9"
+  }
+}
+

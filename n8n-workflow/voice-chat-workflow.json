@@ -1,0 +1,352 @@
+{
+  "name": "ShopKeeping Voice Chat Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "voice-chat",
+        "options": {}
+      },
+      "id": "webhook-voice-chat",
+      "name": "Voice Chat Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "voice-chat-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "health",
+        "options": {}
+      },
+      "id": "webhook-health",
+      "name": "Health Check Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 500],
+      "webhookId": "health-check-webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "ai-response/:requestId",
+        "options": {}
+      },
+      "id": "webhook-ai-response",
+      "name": "AI Response Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 700],
+      "webhookId": "ai-response-webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "condition-1",
+              "leftValue": "={{ $json.audio }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "isNotEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-audio-exists",
+      "name": "If Audio Exists",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Generate unique request ID\nconst requestId = Date.now().toString() + Math.random().toString(36).substr(2, 9);\n\n// Store request data for later retrieval\nconst requestData = {\n  requestId,\n  timestamp: new Date().toISOString(),\n  audio: $input.first().json.audio,\n  status: 'processing'\n};\n\n// Store in memory (in production, use database)\nif (!global.requestStore) {\n  global.requestStore = new Map();\n}\nglobal.requestStore.set(requestId, requestData);\n\nreturn {\n  json: {\n    requestId,\n    success: true,\n    message: 'Audio received and processing started'\n  }\n};"
+      },
+      "id": "generate-request-id",
+      "name": "Generate Request ID",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Return health status\nreturn {\n  json: {\n    status: 'healthy',\n    timestamp: new Date().toISOString(),\n    message: 'n8n server is running'\n  }\n};"
+      },
+      "id": "health-response",
+      "name": "Health Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 500]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Get request ID from URL parameters\nconst requestId = $input.first().params.requestId;\n\n// Get stored request data\nif (!global.requestStore) {\n  global.requestStore = new Map();\n}\n\nconst requestData = global.requestStore.get(requestId);\n\nif (!requestData) {\n  return {\n    json: {\n      error: 'Request not found',\n      requestId\n    }\n  };\n}\n\n// Check if AI response is ready\nif (requestData.aiResponse) {\n  return {\n    json: {\n      requestId,\n      response: requestData.aiResponse,\n      audioUrl: requestData.audioUrl,\n      timestamp: requestData.timestamp\n    }\n  };\n} else {\n  return {\n    json: {\n      requestId,\n      status: 'processing',\n      message: 'AI response not ready yet'\n    }\n  };\n}"
+      },
+      "id": "get-ai-response",
+      "name": "Get AI Response",
+      "type": "n8n-nodes-base.function",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 700]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "upload",
+        "filePath": "={{ $json.audio }}",
+        "options": {}
+      },
+      "id": "save-audio-file",
+      "name": "Save Audio File",
+      "type": "n8n-nodes-base.localFile",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "={{ $env.OPENAI_API_KEY }}",
+        "resource": "audio",
+        "operation": "transcribe",
+        "audio": "={{ $json.audio }}",
+        "options": {}
+      },
+      "id": "openai-stt",
+      "name": "OpenAI Speech-to-Text",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [900, 400]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "={{ $env.OPENAI_API_KEY }}",
+        "resource": "chat",
+        "messages": "=[\n  {\n    \"role\": \"system\",\n    \"content\": \"You are a helpful customer support assistant for ShopKeeping, a retail management system. Analyze customer queries and provide helpful responses based on the Excel data context. Be professional, friendly, and concise.\"\n  },\n  {\n    \"role\": \"user\",\n    \"content\": \"={{ $json.transcription }}\"\n  }\n]",
+        "options": {
+          "model": "gpt-3.5-turbo",
+          "temperature": 0.7,
+          "maxTokens": 500
+        }
+      },
+      "id": "openai-chat",
+      "name": "OpenAI Chat Completion",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [1120, 400]
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "read",
+        "filePath": "={{ $env.EXCEL_FILE_PATH || './data/shopkeeping-data.xlsx' }}",
+        "options": {}
+      },
+      "id": "read-excel-data",
+      "name": "Read Excel Data",
+      "type": "n8n-nodes-base.localFile",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Combine Excel data with AI response for context\nconst transcription = $('OpenAI Speech-to-Text').first().json.text;\nconst aiResponse = $('OpenAI Chat Completion').first().json.choices[0].message.content;\nconst excelData = $('Read Excel Data').first().json;\n\n// Store the complete response\nconst requestId = $('Generate Request ID').first().json.requestId;\n\nif (!global.requestStore) {\n  global.requestStore = new Map();\n}\n\nconst requestData = global.requestStore.get(requestId);\nif (requestData) {\n  requestData.aiResponse = aiResponse;\n  requestData.transcription = transcription;\n  requestData.excelContext = excelData;\n  requestData.status = 'completed';\n  global.requestStore.set(requestId, requestData);\n}\n\nreturn {\n  json: {\n    requestId,\n    transcription,\n    aiResponse,\n    excelContext: excelData,\n    status: 'completed'\n  }\n};"
+      },
+      "id": "combine-data",
+      "name": "Combine Data",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "authentication": "apiKey",
+        "apiKey": "={{ $env.ELEVENLABS_API_KEY }}",
+        "resource": "textToSpeech",
+        "text": "={{ $json.aiResponse }}",
+        "options": {
+          "voiceId": "{{ $env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM' }}",
+          "modelId": "eleven_monolingual_v1"
+        }
+      },
+      "id": "elevenlabs-tts",
+      "name": "ElevenLabs Text-to-Speech",
+      "type": "n8n-nodes-base.elevenLabs",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Save TTS audio and update request data\nconst audioBuffer = $('ElevenLabs Text-to-Speech').first().json.audio;\nconst requestId = $('Combine Data').first().json.requestId;\n\n// Convert audio buffer to file path (simplified)\nconst audioFileName = `response-${requestId}.mp3`;\nconst audioFilePath = `./audio-responses/${audioFileName}`;\n\n// Store audio file path in request data\nif (!global.requestStore) {\n  global.requestStore = new Map();\n}\n\nconst requestData = global.requestStore.get(requestId);\nif (requestData) {\n  requestData.audioUrl = audioFilePath;\n  requestData.status = 'audio-ready';\n  global.requestStore.set(requestId, requestData);\n}\n\nreturn {\n  json: {\n    requestId,\n    audioUrl: audioFilePath,\n    status: 'audio-ready',\n    message: 'Audio response generated successfully'\n  }\n};"
+      },
+      "id": "save-audio-response",
+      "name": "Save Audio Response",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1780, 300]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Error handling for missing audio\nreturn {\n  json: {\n    success: false,\n    error: 'No audio file provided'\n  }\n};"
+      },
+      "id": "error-no-audio",
+      "name": "Error: No Audio",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 100]
+    }
+  ],
+  "connections": {
+    "Voice Chat Webhook": {
+      "main": [
+        [
+          {
+            "node": "If Audio Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Health Check Webhook": {
+      "main": [
+        [
+          {
+            "node": "Health Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Response Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Audio Exists": {
+      "main": [
+        [
+          {
+            "node": "Generate Request ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error: No Audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Request ID": {
+      "main": [
+        [
+          {
+            "node": "Save Audio File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "OpenAI Speech-to-Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Speech-to-Text": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Chat Completion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Excel Data": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Completion": {
+      "main": [
+        [
+          {
+            "node": "Combine Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Data": {
+      "main": [
+        [
+          {
+            "node": "ElevenLabs Text-to-Speech",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ElevenLabs Text-to-Speech": {
+      "main": [
+        [
+          {
+            "node": "Save Audio Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "1",
+  "meta": {
+    "instanceId": "local"
+  },
+  "id": "voice-chat-workflow",
+  "tags": [
+    {
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "id": "voice-chat",
+      "name": "voice-chat"
+    }
+  ]
+}
+
