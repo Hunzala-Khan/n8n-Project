@@ -95,8 +95,8 @@ if (!$env:OPENAI_API_KEY) {
     Write-Host "⚠️  OPENAI_API_KEY not set in .env" -ForegroundColor Yellow
 }
 
-if (!$env:ELEVENLABS_API_KEY) {
-    Write-Host "⚠️  ELEVENLABS_API_KEY not set in .env" -ForegroundColor Yellow
+if (!$env:OPENAI_API_KEY) {
+    Write-Host "⚠️  OPENAI_API_KEY not set in .env" -ForegroundColor Yellow
 }
 
 if (!$env:EXCEL_FILE_PATH) {

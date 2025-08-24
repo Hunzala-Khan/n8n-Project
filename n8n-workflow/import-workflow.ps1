@@ -78,18 +78,11 @@ if (Test-Path ".env") {
     # Check for required API keys
     $envContent = Get-Content ".env"
     $openaiKey = $envContent | Where-Object { $_ -match "^OPENAI_API_KEY=" }
-    $elevenlabsKey = $envContent | Where-Object { $_ -match "^ELEVENLABS_API_KEY=" }
     
     if ($openaiKey -and $openaiKey -notmatch "your_openai_api_key_here") {
-        Write-Host "✅ OpenAI API key configured" -ForegroundColor Green
+        Write-Host "✅ OpenAI API key configured (for STT, Chat, and TTS)" -ForegroundColor Green
     } else {
         Write-Host "⚠️  OpenAI API key not configured" -ForegroundColor Yellow
-    }
-    
-    if ($elevenlabsKey -and $elevenlabsKey -notmatch "your_elevenlabs_api_key_here") {
-        Write-Host "✅ ElevenLabs API key configured" -ForegroundColor Green
-    } else {
-        Write-Host "⚠️  ElevenLabs API key not configured" -ForegroundColor Yellow
     }
 } else {
     Write-Host "❌ .env file not found" -ForegroundColor Red

@@ -8,15 +8,14 @@ This n8n workflow provides a complete voice chat solution with AI-powered custom
 - **Speech-to-Text**: Converts audio to text using OpenAI Whisper
 - **AI Analysis**: Processes customer queries using GPT-3.5-turbo
 - **Excel Integration**: Analyzes business data for context-aware responses
-- **Text-to-Speech**: Converts AI responses to audio using ElevenLabs
+- **Text-to-Speech**: Converts AI responses to audio using OpenAI TTS
 - **Real-time Processing**: Asynchronous workflow with status tracking
 
 ## 📋 Prerequisites
 
 1. **n8n Installation**: n8n must be installed and running
 2. **API Keys**: 
-   - OpenAI API key for STT and AI chat
-   - ElevenLabs API key for TTS
+   - OpenAI API key for STT, AI chat, and TTS
 3. **Excel Data**: ShopKeeping business data file
 4. **File Permissions**: Write access to audio and data directories
 
@@ -63,9 +62,9 @@ mkdir -p audio-uploads audio-responses data
 - Set your OpenAI API key in both STT and Chat nodes
 - Verify model settings (gpt-3.5-turbo recommended)
 
-#### ElevenLabs Node
-- Set your ElevenLabs API key
-- Choose voice ID (default: 21m00Tcm4TlvDq8ikWAM)
+#### OpenAI TTS Node
+- Uses the same OpenAI API key as STT and Chat
+- Available voices: alloy, echo, fable, onyx, nova, shimmer
 
 #### File Nodes
 - Verify file paths match your directory structure
@@ -82,7 +81,7 @@ mkdir -p audio-uploads audio-responses data
 6. Read Excel Data → Loads business context
 7. OpenAI Chat → Generates AI response
 8. Combine Data → Merges all information
-9. ElevenLabs TTS → Converts response to audio
+9. OpenAI TTS → Converts response to audio
 10. Save Audio Response → Stores generated audio
 ```
 
@@ -125,7 +124,7 @@ friendly, and concise."
 ```
 
 ### Voice Customization
-Change the ElevenLabs voice ID in the TTS node or environment variables.
+Change the OpenAI TTS voice in the TTS node or environment variables. Available voices: alloy, echo, fable, onyx, nova, shimmer.
 
 ### Error Handling
 The workflow includes error handling for:

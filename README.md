@@ -14,7 +14,7 @@ This system combines a Vue.js voice chat application with an n8n workflow to pro
 │                 │    │                 │    │   Services      │
 │ • Voice Chat    │◄──►│ • Webhooks      │◄──►│ • OpenAI STT    │
 │ • Audio Record  │    │ • STT Processing│    │ • OpenAI GPT    │
-│ • Real-time UI  │    │ • AI Analysis   │    │ • ElevenLabs TTS│
+│ • Real-time UI  │    │ • AI Analysis   │    │ • OpenAI TTS    │
 │ • Status Display│    │ • Excel Data    │    │ • File Storage  │
 └─────────────────┘    │ • TTS Generation│    └─────────────────┘
                        └─────────────────┘
@@ -53,7 +53,7 @@ ShopKeeping/
 - **Speech-to-Text**: OpenAI Whisper for accurate transcription
 - **Intelligent Analysis**: GPT-3.5-turbo for context-aware responses
 - **Business Context**: Excel data integration for relevant answers
-- **Text-to-Speech**: ElevenLabs for natural voice responses
+- **Text-to-Speech**: OpenAI TTS for natural voice responses
 
 ### 📊 Data Integration
 - **Excel Processing**: Read and analyze business data
@@ -67,7 +67,7 @@ ShopKeeping/
 - Node.js 16+ installed
 - n8n installed globally
 - OpenAI API key
-- ElevenLabs API key
+- OpenAI API key (for STT, Chat, and TTS)
 - Excel file with business data
 
 ### 2. Setup Voice Chat App
@@ -103,9 +103,10 @@ n8n start
 # OpenAI
 OPENAI_API_KEY=your_openai_key
 
-# ElevenLabs
-ELEVENLABS_API_KEY=your_elevenlabs_key
-ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
+# OpenAI TTS
+# Uses the same API key as STT and Chat
+# Available voices: alloy, echo, fable, onyx, nova, shimmer
+OPENAI_TTS_VOICE=alloy
 
 # File Paths
 EXCEL_FILE_PATH=./data/shopkeeping-data.xlsx
@@ -127,7 +128,7 @@ AUDIO_RESPONSES_PATH=./audio-responses
 3. **STT Processing** → OpenAI converts speech to text
 4. **Data Analysis** → AI analyzes query with Excel context
 5. **Response Generation** → AI generates relevant answer
-6. **TTS Conversion** → ElevenLabs converts text to speech
+6. **TTS Conversion** → OpenAI TTS converts text to speech
 7. **Audio Delivery** → Response sent back to the app
 8. **Playback** → Customer hears the AI response
 
@@ -225,7 +226,7 @@ This project is provided as-is for educational and commercial use. Please ensure
 ## 🙏 Acknowledgments
 
 - **OpenAI** for Speech-to-Text and AI capabilities
-- **ElevenLabs** for Text-to-Speech services
+- **OpenAI TTS** for Text-to-Speech services
 - **n8n** for workflow automation platform
 - **Vue.js** for the frontend framework
 
